@@ -121,18 +121,17 @@ class SVTAppWindow(MainWindow):
     def progress(self, newProgress):
         self.progressBar.setValue(newProgress)
 
-    def playFrame(self):
-        self.displayLocal()
-        self.frameSlider.setValue(self.frameSlider.value() + 1)
-        if self.playing:
+    def playFrames(self):
+        while self.playing:
+            self.displayLocal()
+            self.frameSlider.setValue(self.frameSlider.value() + 1)
             time.sleep(1.0 / self.fps)
-            self.playFrame()
 
     def playPause(self):
         self.playing = not self.playing
         if self.playing:
             self.playButton.setText("Stop")
-            threading.Thread(target=self.playFrame).start()
+            threading.Thread(target=self.playFrames).start()
         else:
             self.playButton.setText("Play")
 
