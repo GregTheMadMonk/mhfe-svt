@@ -22,6 +22,7 @@ class SVTAppWindow(MainWindow):
         # Playback options
         self.fps = 60 # Animation frames per second
         self.playing = False
+        self.outputGif = False
 
         windowLayout = QtWidgets.QVBoxLayout()
 
@@ -49,6 +50,11 @@ class SVTAppWindow(MainWindow):
         self.playButton.clicked.connect(self.playPause)
         buttonLayout.addWidget(self.playButton)
 
+        # Output GIF button
+        self.outputGifButton = QtWidgets.QPushButton("GIF output: off")
+        self.outputGifButton.clicked.connect(self.toggleOutputGif)
+        buttonLayout.addWidget(self.outputGifButton)
+
         # Layer selector menu
         self.layerSelector = QtWidgets.QComboBox()
         self.layerSelector.addItems([ "Select Layer..." ])
@@ -74,6 +80,8 @@ class SVTAppWindow(MainWindow):
     def display(self, mesh):
         self.plotter.clear()
         self.plotter.add_mesh(mesh, scalars=self.layerSelector.currentText())
+        if self.outputGif:
+            self.plotter.write_frame()
 
     def displayLocal(self):
         file, mesh = self.meshes[self.frameSlider.value()]
@@ -125,15 +133,28 @@ class SVTAppWindow(MainWindow):
         while self.playing:
             self.displayLocal()
             self.frameSlider.setValue(self.frameSlider.value() + 1)
+            if self.frameSlider.value() >= len(meshfiles):
+                self.frameSlider.setValue(0)
             time.sleep(1.0 / self.fps)
 
-    def playPause(self):
+    def playPause(self, startFrame = -1):
         self.playing = not self.playing
         if self.playing:
+            if startFrame != -1:
+                self.frameSlider.setValue(startFrame)
+
             self.playButton.setText("Stop")
             threading.Thread(target=self.playFrames).start()
         else:
             self.playButton.setText("Play")
+
+    def toggleOutputGif(self):
+        self.outputGif = not self.outputGif
+        if self.outputGif:
+            self.plotter.open_gif("svt.gif")
+            self.outputGifButton.setText("GIF output: on")
+        else:
+            self.outputGifButton.setText("GIF output: off")
 
 # MAIN
 def main():
