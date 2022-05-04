@@ -19,7 +19,6 @@ class SVTAppWindow(MainWindow):
         self.setWindowTitle("SVT")
 
         # Playback options
-        self.fps = 60 # Animation frames per second
         self.playing = False
         self.outputGif = False
         self.meshes = []
@@ -59,10 +58,10 @@ class SVTAppWindow(MainWindow):
         loadDirButton.clicked.connect(self.openLoadDir)
         fileButtonLayout.addWidget(loadDirButton)
 
-        # Play button
-        self.playButton = QtWidgets.QPushButton("Play")
-        self.playButton.clicked.connect(self.playPause)
-        playbackButtonLayout.addWidget(self.playButton)
+        # Output GIF button
+        self.outputGifButton = QtWidgets.QPushButton("GIF output OFF")
+        self.outputGifButton.clicked.connect(self.toggleOutputGif)
+        fileButtonLayout.addWidget(self.outputGifButton)
 
         # Layer selector menu
         self.layerSelector = QtWidgets.QComboBox()
@@ -75,10 +74,30 @@ class SVTAppWindow(MainWindow):
         self.scalarHeightButton.clicked.connect(self.toggleValToHeights)
         viewButtonLayout.addWidget(self.scalarHeightButton)
 
-        # Output GIF button
-        self.outputGifButton = QtWidgets.QPushButton("GIF output OFF")
-        self.outputGifButton.clicked.connect(self.toggleOutputGif)
-        fileButtonLayout.addWidget(self.outputGifButton)
+        # Play button
+        self.playButton = QtWidgets.QPushButton("Play")
+        self.playButton.clicked.connect(self.playPause)
+        playbackButtonLayout.addWidget(self.playButton)
+
+        # "Playback speed" picker
+        self.skipFrames = QtWidgets.QSpinBox()
+        self.skipFrames.setMinimum(1)
+        self.skipFrames.setMaximum((1 << 31) - 1)
+        self.skipFrames.setValue(1)
+        skipFramesLabel = QtWidgets.QLabel("Advance frames:")
+        skipFramesLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        playbackButtonLayout.addWidget(skipFramesLabel)
+        playbackButtonLayout.addWidget(self.skipFrames)
+
+        # Playback FPS picker
+        self.FPSPicker = QtWidgets.QSpinBox()
+        self.FPSPicker.setMinimum(1)
+        self.FPSPicker.setMaximum((1 << 31) - 1)
+        self.FPSPicker.setValue(60)
+        FPSPickerLabel = QtWidgets.QLabel("FPS:")
+        FPSPickerLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        playbackButtonLayout.addWidget(FPSPickerLabel)
+        playbackButtonLayout.addWidget(self.FPSPicker)
 
         # Time slider
         self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -99,7 +118,6 @@ class SVTAppWindow(MainWindow):
         # Play timer
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.timerPlayFrames)
-        self.timer.start(1000 / self.fps)
 
         if show: self.show()
 
@@ -166,19 +184,21 @@ class SVTAppWindow(MainWindow):
 
     def playFrame(self):
         self.displayLocal()
-        self.frameSlider.setValue(self.frameSlider.value() + 1)
-        if self.frameSlider.value() >= len(self.meshes):
-            self.frameSlider.setValue(0)
-        time.sleep(1.0 / self.fps)
+        nextVal = self.frameSlider.value() + self.skipFrames.value()
+        if nextVal >= len(self.meshes):
+            nextVal = 0
+        self.frameSlider.setValue(nextVal)
 
     def playPause(self, startFrame = -1):
         self.playing = not self.playing
         if self.playing:
+            self.timer.start(int(1000.0 / self.FPSPicker.value()))
             if startFrame != -1:
                 self.frameSlider.setValue(startFrame)
 
             self.playButton.setText("Stop")
         else:
+            self.timer.stop()
             self.playButton.setText("Play")
 
     def toggleOutputGif(self):
@@ -192,6 +212,7 @@ class SVTAppWindow(MainWindow):
         else:
             self.outputGifButton.setText("GIF output OFF")
             self.bgPlotter.close()
+            self.bgPlotter = pv.Plotter(notebook=False, off_screen=True)
 
     def toggleValToHeights(self):
         if not self.meshes: return
