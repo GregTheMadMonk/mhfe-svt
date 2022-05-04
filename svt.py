@@ -40,39 +40,45 @@ class SVTAppWindow(MainWindow):
 
         self.signal_close.connect(self.plotter.close)
 
-        # Menu buttons
-        buttonLayout1Frame = QtWidgets.QFrame()
-        buttonLayout1 = QtWidgets.QHBoxLayout()
-        buttonLayout1Frame.setLayout(buttonLayout1)
-        buttonLayout2Frame = QtWidgets.QFrame()
-        buttonLayout2 = QtWidgets.QHBoxLayout()
-        buttonLayout2Frame.setLayout(buttonLayout2)
+        # Menu button rows
+        fileButtonLayoutFrame = QtWidgets.QFrame()
+        fileButtonLayout = QtWidgets.QHBoxLayout()
+        fileButtonLayout.setContentsMargins(0, 0, 0, 0)
+        fileButtonLayoutFrame.setLayout(fileButtonLayout)
+        viewButtonLayoutFrame = QtWidgets.QFrame()
+        viewButtonLayout = QtWidgets.QHBoxLayout()
+        viewButtonLayout.setContentsMargins(0, 0, 0, 0)
+        viewButtonLayoutFrame.setLayout(viewButtonLayout)
+        playbackButtonLayoutFrame = QtWidgets.QFrame()
+        playbackButtonLayout = QtWidgets.QHBoxLayout()
+        playbackButtonLayout.setContentsMargins(0, 0, 0, 0)
+        playbackButtonLayoutFrame.setLayout(playbackButtonLayout)
 
         # Load dir button
         loadDirButton = QtWidgets.QPushButton("Load Directory")
         loadDirButton.clicked.connect(self.openLoadDir)
-        buttonLayout1.addWidget(loadDirButton)
+        fileButtonLayout.addWidget(loadDirButton)
 
         # Play button
         self.playButton = QtWidgets.QPushButton("Play")
         self.playButton.clicked.connect(self.playPause)
-        buttonLayout1.addWidget(self.playButton)
+        playbackButtonLayout.addWidget(self.playButton)
 
         # Layer selector menu
         self.layerSelector = QtWidgets.QComboBox()
         self.layerSelector.addItems([ "Select Layer..." ])
         self.layerSelector.activated.connect(self.displayLocal)
-        buttonLayout1.addWidget(self.layerSelector)
+        viewButtonLayout.addWidget(self.layerSelector)
 
         # Automatically convert selected data layer to mesh height
         self.scalarHeightButton = QtWidgets.QPushButton("Height map OFF")
         self.scalarHeightButton.clicked.connect(self.toggleValToHeights)
-        buttonLayout2.addWidget(self.scalarHeightButton)
+        viewButtonLayout.addWidget(self.scalarHeightButton)
 
         # Output GIF button
         self.outputGifButton = QtWidgets.QPushButton("GIF output OFF")
         self.outputGifButton.clicked.connect(self.toggleOutputGif)
-        buttonLayout2.addWidget(self.outputGifButton)
+        fileButtonLayout.addWidget(self.outputGifButton)
 
         # Time slider
         self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -81,8 +87,9 @@ class SVTAppWindow(MainWindow):
         # Progress bar
         self.progressBar = QtWidgets.QProgressBar()
 
-        windowLayout.addWidget(buttonLayout1Frame)
-        windowLayout.addWidget(buttonLayout2Frame)
+        windowLayout.addWidget(fileButtonLayoutFrame)
+        windowLayout.addWidget(viewButtonLayoutFrame)
+        windowLayout.addWidget(playbackButtonLayoutFrame)
         windowLayout.addWidget(self.frameSlider)
         windowLayout.addWidget(self.plotter.interactor)
         windowLayout.addWidget(self.progressBar)
@@ -177,7 +184,10 @@ class SVTAppWindow(MainWindow):
     def toggleOutputGif(self):
         self.outputGif = not self.outputGif
         if self.outputGif:
-            self.bgPlotter.open_gif("svt.gif")
+            name, ext = QtWidgets.QFileDialog.getSaveFileName(self, "Save GIF", "", ".gif")
+            gifname = name + ext
+            if not name: gifname = "svt.gif"
+            self.bgPlotter.open_gif(gifname)
             self.outputGifButton.setText("GIF output ON")
         else:
             self.outputGifButton.setText("GIF output OFF")
@@ -200,6 +210,9 @@ class SVTAppWindow(MainWindow):
                 mesh.points[:, -1] = vals.ravel() * 5
             else:
                 mesh.points[:, -1] = 0
+
+        self.status("Done!")
+        self.displayLocal()
 
 # MAIN
 def main():
