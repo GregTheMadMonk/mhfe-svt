@@ -121,12 +121,14 @@ class SVTAppWindow(MainWindow):
 
         if show: self.show()
 
-    def display(self, mesh):
+    def display(self, mesh, text = None):
         if self.outputGif:
             self.bgPlotter.clear()
+            if text: self.bgPlotter.add_text(text, render=False)
             self.bgPlotter.add_mesh(mesh, scalars=self.layerSelector.currentText(), render=False)
             self.bgPlotter.write_frame()
         self.plotter.clear()
+        if text: self.plotter.add_text(text, render=False)
         self.plotter.add_mesh(mesh, scalars=self.layerSelector.currentText(), render=False)
 
     def displayLocal(self):
@@ -134,9 +136,10 @@ class SVTAppWindow(MainWindow):
 
         file, mesh = self.meshes[self.frameSlider.value()]
         self.status(f"Viewing {file}")
-        self.display(mesh)
+        self.display(mesh, f"Mesh {file}")
 
     def openLoadDir(self):
+        if self.v2h: self.toggleValToHeights() # Imported meshes don't have height info by default
         # Call Qt open dir dialog
         dialog = QtWidgets.QFileDialog(self, "Open Directory")
         dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
