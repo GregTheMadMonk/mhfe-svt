@@ -4,7 +4,6 @@ This is a tool to simplify the process of viewing VTK files obtained in computat
 ## Known issues
 * GIF export camera position could not be set
 * FPS couldn't actually be set higher than some value
-* `sorted(os.listdir())` gives wrong file order for files starting with the same number (e.g. in a directory containing **1.vtk**, **2.vtk** and **10.vtk** the latter will be placed before **2.vtk** in a sorted list, which is an issue!
 
 ## Wishlist
 * Open mulitpile directories at once

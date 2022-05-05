@@ -149,7 +149,7 @@ class SVTAppWindow(MainWindow):
 
         # Load meshes from directory
         self.meshes = []
-        self.meshfiles = sorted(os.listdir(directory))
+        self.meshfiles = sorted(os.listdir(directory), key = lambda e: float(os.path.splitext(e)[0]))
         for idx, file in enumerate(self.meshfiles):
             self.meshes.append((file, pv.read(os.path.join(directory, file))))
             self.status(f"Loading {file}...")
