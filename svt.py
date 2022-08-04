@@ -16,27 +16,29 @@ class SVTAppWindow(MainWindow):
     def __init__(self, parent=None, show=True):
         QtWidgets.QMainWindow.__init__(self, parent)
 
-        self.setWindowTitle("SVT")
+        self._titleBase = "SVT"
+
+        self.setWindowTitle(self._titleBase)
 
         # Playback options
-        self.playing = False
-        self.outputGif = False
-        self.meshes = []
-        self.meshfiles = []
-        self.v2h = False
-        self.actor = None
+        self.playing    = False
+        self.outputGif  = False
+        self.meshes     = []
+        self.meshfiles  = []
+        self.v2h        = False
+        self.actor      = None
 
+        # Background plotter for GIF output
         self.bgPlotter = pv.Plotter(notebook=False, off_screen=True)
-
-        windowLayout = QtWidgets.QVBoxLayout()
 
         self.frame = QtWidgets.QFrame()
 
-        # PyVista plotter
-        self.plotter = QtInteractor(self.frame, auto_update=False)
-
+        # Window layout
+        windowLayout = QtWidgets.QVBoxLayout()
         self.frame.setLayout(windowLayout)
 
+        # PyVista plotter
+        self.plotter = QtInteractor(self.frame, auto_update=False)
         self.signal_close.connect(self.plotter.close)
 
         # Menu button rows
@@ -117,7 +119,7 @@ class SVTAppWindow(MainWindow):
 
         # Play timer
         self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.timerPlayFrames)
+        self.timer.timeout.connect(self.playFrame)
 
         if show: self.show()
 
@@ -139,7 +141,8 @@ class SVTAppWindow(MainWindow):
         self.display(mesh, f"Mesh {file}")
 
     def openLoadDir(self):
-        if self.v2h: self.toggleValToHeights() # Imported meshes don't have height info by default
+        # Imported meshes don't have height info by default
+        if self.v2h: self.toggleValToHeights()
         # Call Qt open dir dialog
         dialog = QtWidgets.QFileDialog(self, "Open Directory")
         dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
@@ -148,23 +151,28 @@ class SVTAppWindow(MainWindow):
         # TODO: Support loading multiple dirs
         directory = dialog.selectedFiles()[0]
 
-        self.setWindowTitle(f"SVT: {directory}")
+        # Update window title
+        self.setWindowTitle(f"{self._titleBase}: {directory}")
 
         # Load meshes from directory
         self.meshes = []
+        # Get mesh files list & sort it
+        # TODO: Verify that directory contains VTU's and filter out other files
         self.meshfiles = sorted(os.listdir(directory), key = lambda e: float(os.path.splitext(e)[0]))
         for idx, file in enumerate(self.meshfiles):
+            # Save both filename and loaded mesh
             self.meshes.append((file, pv.read(os.path.join(directory, file))))
             self.status(f"Loading {file}...")
             self.progress(int(100 * (idx + 1) / len(self.meshfiles)))
 
-        # Retrieve the layers
+        # Retrieve the layers from the first mesh
+        # (all the meshes from the same calculation share the same layers) 
         self.layerSelector.clear()
         _, demomesh = self.meshes[0]
         for layer in demomesh.cell_data:
             self.layerSelector.addItem(layer)
 
-        # Reset the slider
+        # Reset the slider range and position
         self.frameSlider.setRange(0, len(self.meshfiles) - 1)
         self.frameSlider.setValue(0)
 
@@ -179,11 +187,6 @@ class SVTAppWindow(MainWindow):
     # Set progress bar percentage
     def progress(self, newProgress):
         self.progressBar.setValue(newProgress)
-
-    def timerPlayFrames(self):
-        if not self.playing: return
-
-        self.playFrame()
 
     def playFrame(self):
         self.displayLocal()
