@@ -22,6 +22,7 @@ class SVTAppWindow(MainWindow):
 
         # Playback options
         self.playing    = False
+        self.looping    = False
         self.outputGif  = False
         self.meshes     = []
         self.meshfiles  = []
@@ -80,6 +81,11 @@ class SVTAppWindow(MainWindow):
         self.playButton = QtWidgets.QPushButton("Play")
         self.playButton.clicked.connect(self.playPause)
         playbackButtonLayout.addWidget(self.playButton)
+
+        # Loop button
+        self.loopButton = QtWidgets.QPushButton("Loop OFF")
+        self.loopButton.clicked.connect(self.toggleLoop)
+        playbackButtonLayout.addWidget(self.loopButton)
 
         # "Playback speed" picker
         self.skipFrames = QtWidgets.QSpinBox()
@@ -193,6 +199,7 @@ class SVTAppWindow(MainWindow):
         nextVal = self.frameSlider.value() + self.skipFrames.value()
         if nextVal >= len(self.meshes):
             nextVal = 0
+            if not self.looping: self.playPause() # Stop playing if looping is disabled
         self.frameSlider.setValue(nextVal)
 
     def playPause(self, startFrame = -1):
@@ -206,6 +213,10 @@ class SVTAppWindow(MainWindow):
         else:
             self.timer.stop()
             self.playButton.setText("Play")
+
+    def toggleLoop(self):
+        self.looping = not self.looping
+        self.loopButton.setText("Loop ON" if self.looping else "Loop OFF")
 
     def toggleOutputGif(self):
         self.outputGif = not self.outputGif
